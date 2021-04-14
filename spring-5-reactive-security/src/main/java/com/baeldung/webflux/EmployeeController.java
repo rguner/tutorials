@@ -27,7 +27,18 @@ public class EmployeeController {
 
     @GetMapping
     private Flux<Employee> getAllEmployees() {
-        return employeeRepository.findAllEmployees();
+        System.out.println("-----------------------------------------------------------------------------------------------------------");
+        System.out.println("EmployeeController.getAllEmployees :" + Thread.currentThread().getName());
+        Flux<Employee> f = employeeRepository.findAllEmployees();
+        System.out.println("EmployeeController.flux            :" + Thread.currentThread().getName());
+        return f;
+    }
+
+    @GetMapping("/all/{trId}")
+    private Flux<Employee> getAllEmployeesWithTrId(@PathVariable String trId) {
+        System.out.println("-----------------------------------------------------------------------------------------------------------");
+        System.out.println("EmployeeController.getAllEmployees :" + Thread.currentThread().getName() + " " + trId);
+        return employeeRepository.findAllEmployees(trId);
     }
 
     @PostMapping("/update")

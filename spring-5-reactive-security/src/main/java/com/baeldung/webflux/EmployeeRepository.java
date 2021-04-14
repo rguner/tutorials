@@ -1,5 +1,7 @@
 package com.baeldung.webflux;
 
+import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Repository
 public class EmployeeRepository {
@@ -49,9 +52,82 @@ public class EmployeeRepository {
     
     public Flux<Employee> findAllEmployees()
     {
-        return Flux.fromIterable(employeeData.values());
+        System.out.println("EmployeeRepository.findAllEmployees :" + Thread.currentThread().getName());
+        //Flux<Employee> flux = getData();
+        //Flux<Employee> flux = getDataFromParallel();
+        Flux<Employee> flux = getDataFromRemoteWithParallel();
+        System.out.println("EmployeeRepository.flux             :" + Thread.currentThread().getName());
+        return flux;
     }
-    
+
+    private Flux<Employee> getData() {
+        Flux<Employee> flux = Flux.fromIterable(getEmployees());
+        return flux;
+    }
+
+    private Flux<Employee> getDataFromSameThread() {
+        Flux<Employee> flux = Flux.fromIterable(getEmployees())
+                .log();
+        return flux;
+    }
+
+
+    private Flux<Employee> getDataFromParallelWithDuration() {
+        Flux<Employee> flux = Flux.fromIterable(getEmployees())
+                .log()
+                .delaySubscription(Duration.ofMillis(5000));
+        return flux;
+    }
+
+    private Flux<Employee> getDataFromParallel() {
+        Flux<Employee> flux = Flux.fromIterable(getEmployees())
+                .log()
+                .subscribeOn(Schedulers.newParallel("thread-parallel"))
+                ;
+        // subscribeOn(Schedulers.newParallel("thread-parallel")) aktifken paralel işler her iki subscriber'ı
+        //subscribeOn aktif değils, subscriber'lar ser işlenir, biri biter diğeri başlar.
+        flux.subscribe(s->System.out.println("EMPLOYEE: ____ " + s.getName()));
+        flux.subscribe(s->System.out.println("EMPLOYEE2: ::::: " + s.getName()));
+
+        return flux;
+    }
+
+    private Flux<Employee> getDataFromRemoteWithParallel() {
+        Flux<Employee> flux = Flux.fromIterable(getEmployees())
+                .log()
+                .subscribeOn(Schedulers.newParallel("thread-parallel"))
+                ;
+        // subscribeOn(Schedulers.newParallel("thread-parallel")) aktifken paralel işler her iki subscriber'ı
+        //subscribeOn aktif değils, subscriber'lar ser işlenir, biri biter diğeri başlar.
+        flux.subscribe(s->System.out.println("EMPLOYEE: ____ " + s.getName()));
+        flux.subscribe(s->System.out.println("EMPLOYEE2: ::::: " + s.getName()));
+
+        return flux;
+    }
+
+    public Flux<Employee> findAllEmployees(String trId)
+    {
+        System.out.println("EmployeeRepository.findAllEmployees :" + Thread.currentThread().getName() + " " + trId);
+        Flux<Employee> flux = Flux.fromIterable(getEmployees(trId));
+        System.out.println("EmployeeRepository.flux             :" + Thread.currentThread().getName() + " " + trId);
+        return flux;
+    }
+
+    private Collection<Employee> getEmployees(String trId) {
+        System.out.println("EmployeeRepository.getEmployees :" + Thread.currentThread().getName() + " " + trId);
+        sleep();
+        Collection<Employee> employees = employeeData.values();
+        return employees;
+    }
+
+
+    private Collection<Employee> getEmployees() {
+        System.out.println("EmployeeRepository.getEmployees :" + Thread.currentThread().getName());
+        sleep();
+        Collection<Employee> employees = employeeData.values();
+        return employees;
+    }
+
     public Mono<Employee> updateEmployee(Employee employee)
     {
         Employee existingEmployee=employeeData.get(employee.getId());
@@ -60,5 +136,13 @@ public class EmployeeRepository {
             existingEmployee.setName(employee.getName());
         }
         return Mono.just(existingEmployee);
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
