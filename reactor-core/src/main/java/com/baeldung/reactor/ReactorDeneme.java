@@ -31,7 +31,67 @@ public class ReactorDeneme {
         // reactorDeneme.withDelay();
         // reactorDeneme.delayAndStream();
         // reactorDeneme.firstEmitting();
-        reactorDeneme.subsOnPubOn();
+        // reactorDeneme.subsOnPubOn();
+        //reactorDeneme.errorOnReturn();
+        //reactorDeneme.errorOnResume();
+        //reactorDeneme.doOnError();
+        reactorDeneme.onErrorMap();
+    }
+
+    private void onErrorMap() {
+        List<Integer> elements = new ArrayList<>();
+
+        Flux.just(1, 2, 3, 4, 0, 5)
+                .log()
+                .map(i -> 100 / i)
+                .onErrorMap(error -> {
+                    System.out.println("Hata");
+                    throw new RuntimeException("Bir hata oluştu");
+                })
+                .subscribe(elements::add);
+
+        System.out.println(elements);
+    }
+
+    private void doOnError() {
+        List<Integer> elements = new ArrayList<>();
+
+        Flux.just(1, 2, 3, 4, 0, 5)
+                .log()
+                .map(i -> 100 / i)
+                .doOnError(error -> {
+                    System.out.println("Hata" + error.getMessage());
+                })
+                .subscribe(elements::add);
+
+        System.out.println(elements);
+    }
+
+    private void errorOnReturn() {
+        List<Integer> elements = new ArrayList<>();
+
+        Flux.just(1, 2, 3, 4, 0, 5)
+                .log()
+                .map(i -> 100 / i)
+                .onErrorReturn(Integer.MAX_VALUE)
+                .subscribe(elements::add);
+
+        System.out.println(elements);
+    }
+
+    private void errorOnResume() {
+        List<Integer> elements = new ArrayList<>();
+
+        Flux.just(1, 2, 3, 4, 0, 5)
+                .log()
+                .map(i -> 100 / i)
+                .onErrorResume(error -> {
+                    System.out.println("Hata");
+                    return Flux.range(100,3);
+                })
+                .subscribe(elements::add);
+
+        System.out.println(elements);
     }
 
     private void subsOnPubOn() {
@@ -43,7 +103,7 @@ public class ReactorDeneme {
         Note
         We changed the code in this sample from subscribe(null, 2) to adding a prefetch=2 to the publishOn(). In this case the fetch size hint in subscribe() would have been ignored.
          */
-        Flux.just("red", "white", "blue","white","green","gray","yellow","black")
+        Flux.just("red", "white", "blue", "white", "green", "gray", "yellow", "black")
                 .log()
                 .map(String::toUpperCase)
                 .subscribeOn(Schedulers.newParallel("sub"))
@@ -84,7 +144,7 @@ public class ReactorDeneme {
                                 .delaySubscription(Duration.ofMillis(2500)));
 
         // helloPauseWorld.subscribe(System.out::println);
-        helloPauseWorld.subscribe(s-> {
+        helloPauseWorld.subscribe(s -> {
             System.out.println(s + " " + Thread.currentThread().getName());
         });
 
@@ -219,7 +279,7 @@ public class ReactorDeneme {
                 .log()
                 .flatMap(value ->
                                 Mono.just(value.toUpperCase())
-                                     //  .subscribeOn(Schedulers.parallel()),
+                        //  .subscribeOn(Schedulers.parallel()),
                         // 2)
                 )
                 .subscribe(value -> {
@@ -280,10 +340,11 @@ public class ReactorDeneme {
                 .log()
                 .subscribe(new Subscriber<Integer>() {
                     private Subscription s;
+
                     @Override
                     public void onSubscribe(Subscription s) {
 
-                        this.s=s;
+                        this.s = s;
                         s.request(Long.MAX_VALUE);
                         //s.request(1);
                     }
